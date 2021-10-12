@@ -18,10 +18,7 @@ namespace BrainWorks.ObjectSense
 
 		public GameObject[] GetVisibleObjects()
 		{
-			_camera.enabled = true;
-
 			var visibleGameObjects = new List<GameObject>();
-
 			var planes = GeometryUtility.CalculateFrustumPlanes(_camera);
 
 			//Get all available renderers.
@@ -38,8 +35,6 @@ namespace BrainWorks.ObjectSense
 				if (GeometryUtility.TestPlanesAABB(planes, currentTarget.bounds))
 					visibleGameObjects.Add(currentTarget.gameObject);
 			}
-
-			_camera.enabled = false;
 
 			return visibleGameObjects.ToArray();
 		}

@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace BrainWorks.ObjectSense
 {
+	[RequireComponent(typeof(SphereCollider))]
 	public class SphereObjectSense : MonoBehaviour, IObjectSense
 	{
 		private const int MaxColliderAmount = 128;

@@ -1,6 +1,9 @@
 using UnityEngine;
 
-public interface IObjectSense
+namespace BrainWorks.ObjectSense
 {
-	GameObject[] GetVisibleObjects();
+	public interface IObjectSense
+	{
+		GameObject[] GetVisibleObjects(int objectCount);
+	}
 }

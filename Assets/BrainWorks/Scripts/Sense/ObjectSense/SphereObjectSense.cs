@@ -13,7 +13,7 @@ namespace BrainWorks.ObjectSense
 
 		private Collider[] _colliders = new Collider[MaxColliderAmount];
 
-		public GameObject[] GetVisibleObjects()
+		public GameObject[] GetVisibleObjects(int objectCount)
 		{
 			var visibleObjects = new List<GameObject>();
 

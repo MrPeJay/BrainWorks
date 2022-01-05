@@ -1,15 +1,14 @@
-using System.Collections;
 using System.Collections.Generic;
 using BrainWorks.Extensions;
+using BrainWorks.ObjectSense;
+using UnityEditor.SearchService;
 using UnityEngine;
 
 namespace BrainWorks.Senses
 {
 	[RequireComponent(typeof(IObjectSense))]
-	public class Vision : MonoBehaviour
+	public class Vision : MonoBehaviour, ISense
 	{
-		[SerializeField] private float visionUpdateTime = 0.2f;
-
 		private readonly List<GameObject> _visibleGameObjects = new List<GameObject>();
 
 		private IObjectSense _objectSense;
@@ -17,35 +16,32 @@ namespace BrainWorks.Senses
 		private void Start()
 		{
 			_objectSense = GetComponent<IObjectSense>();
-
-			StartCoroutine(VisionUpdate());
 		}
 
-		private IEnumerator VisionUpdate()
+		public void Tick(int objectCount)
 		{
-			var wait = new WaitForSeconds(visionUpdateTime);
+			GatherVisibleObjects(objectCount);
+		}
 
-			while (true)
-			{
-				yield return wait;
-				GatherVisibleObjects();
-			}
+		public ISense.SenseType GetSenseType()
+		{
+			return ISense.SenseType.Vision;
 		}
 
 		/// <summary>
 		/// Gathers all visible objects based on the assigned object sense component.
 		/// </summary>
-		private void GatherVisibleObjects()
+		private void GatherVisibleObjects(int objectCount)
 		{
 			_visibleGameObjects.Clear();
 
-			var visibleObjects = _objectSense.GetVisibleObjects();
+			var visibleObjects = _objectSense.GetVisibleObjects(objectCount);
 
 			for (var i = 0; i < visibleObjects.Length; i++)
-				FieldOfViewCheck(visibleObjects[i]);
+				VisibilityCheck(visibleObjects[i]);
 		}
 
-		private void FieldOfViewCheck(GameObject target)
+		private void VisibilityCheck(GameObject target)
 		{
 			var objectPosition = transform.position;
 

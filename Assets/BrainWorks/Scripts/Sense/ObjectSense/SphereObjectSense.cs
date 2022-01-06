@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace BrainWorks.ObjectSense
@@ -13,17 +12,17 @@ namespace BrainWorks.ObjectSense
 
 		private Collider[] _colliders = new Collider[MaxColliderAmount];
 
-		public GameObject[] GetVisibleObjects(int objectCount)
+		public Detectable[] GetVisibleObjects(int objectCount)
 		{
-			var visibleObjects = new List<GameObject>();
-
 			var colliderAmount =
 				Physics.OverlapSphereNonAlloc(transform.position, radius, _colliders, visibleLayerMask);
 
-			for (var i = 0; i < colliderAmount; i++)
-				visibleObjects.Add(_colliders[i].gameObject);
+			var visibleDetectables = new Detectable[colliderAmount];
 
-			return visibleObjects.ToArray();
+			for (var i = 0; i < colliderAmount; i++)
+				visibleDetectables[i] = _colliders[i].GetComponent<Detectable>();
+
+			return visibleDetectables;
 		}
 
 		/// <summary>

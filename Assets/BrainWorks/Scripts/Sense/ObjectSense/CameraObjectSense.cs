@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace BrainWorks.ObjectSense
@@ -17,55 +15,97 @@ namespace BrainWorks.ObjectSense
 			_camera.enabled = false;
 		}
 
-		public GameObject[] GetVisibleObjects(int objectCount)
+		public Detectable[] GetVisibleObjects(int objectCount)
 		{
-			var visibleGameObjects = new Dictionary<GameObject, float>(objectCount);
-			var planes = GeometryUtility.CalculateFrustumPlanes(_camera);
+			var detectableDatas = new DetectableData[objectCount];
 
 			//Get all available renderers.
 			var detectables = DetectableHolder.GetDetectables();
+			var maxDistance = 0f;
+			var length = 0;
 
-			for (var i = 0; i < detectables.Length; i++)
+			var detectableCount = detectables.Length;
+			for (var i = 0; i < detectableCount; i++)
 			{
-				var currentTarget = detectables[i].GetRendererComponent();
+				var currentDetectable = detectables[i];
 
 				//Check if correct layer mask.
-				if (visibleLayerMask != (visibleLayerMask | 1 << currentTarget.gameObject.layer))
+				if (visibleLayerMask != (visibleLayerMask | 1 << currentDetectable.GetRendererComponent().gameObject.layer))
 					continue;
 
-				if (GeometryUtility.TestPlanesAABB(planes, currentTarget.bounds))
+				//More performance friendly approach to see if the object is visible in a certain camera view.
+				var currentDetectablePosition = currentDetectable.transform.position;
+				if (!IsPositionInView(currentDetectablePosition)) continue;
+
+				var currentObjectDistance = (currentDetectablePosition - transform.position).sqrMagnitude;
+
+				//Add objects till it is full.
+				if (length < objectCount)
 				{
-					var currentObjectDistance = (currentTarget.transform.position - transform.position).sqrMagnitude;
+					detectableDatas[length] = new DetectableData(i, currentObjectDistance);
 
-					//Add objects till it is full.
-					if (visibleGameObjects.Count < objectCount)
-					{
-						visibleGameObjects.Add(currentTarget.gameObject, currentObjectDistance);
-						continue;
-					}
+					if (maxDistance < currentObjectDistance)
+						maxDistance = currentObjectDistance; 
 
-					GameObject previousObject = null, currentObject = currentTarget.gameObject;
+					length++;
 
-					foreach (var currentVisibleGameObject in visibleGameObjects.Keys)
-					{
-						var previousObjectDistance = visibleGameObjects[currentVisibleGameObject];
-
-						if (previousObjectDistance > currentObjectDistance)
-						{
-							previousObject = currentVisibleGameObject;
-							break;
-						}
-					}
-
-					if (previousObject != null)
-					{
-						visibleGameObjects.Remove(previousObject);
-						visibleGameObjects.Add(currentObject, currentObjectDistance);
-					}
+					continue;
 				}
+
+				//If value is higher than the max of the first items, skip it.
+				if (currentObjectDistance > maxDistance)
+					continue;
+
+				//Find the issue here. something wrong with indexing I guess.. Also check distances.
+				var previousDetectableIndex = -1;
+
+				for (var j = 0; j < length; j++)
+				{
+					var previousDetectableData = detectableDatas[j];
+
+					if (!(previousDetectableData.DistanceToDetectable > currentObjectDistance)) continue;
+
+					previousDetectableIndex = j;
+					break;
+				}
+
+				if (previousDetectableIndex == -1)
+					continue;
+
+				detectableDatas[previousDetectableIndex] =
+					new DetectableData(i, currentObjectDistance);
 			}
 
-			return visibleGameObjects.Keys.ToArray();
+			var detectableArray = new Detectable[length];
+			for (var i = 0; i < length; i++)
+				detectableArray[i] = detectables[detectableDatas[i].DetectableIndex];
+
+			return detectableArray;
+		}
+
+		private readonly struct DetectableData
+		{
+			public readonly int DetectableIndex;
+			public readonly float DistanceToDetectable;
+
+			public DetectableData(int index, float distance)
+			{
+				DetectableIndex = index;
+				DistanceToDetectable = distance;
+			}
+		}
+
+		/// <summary>
+		/// Returns whether the target position is inside the camera frustum.
+		/// </summary>
+		/// <param name="detectablePosition"></param>
+		/// <returns></returns>
+		private bool IsPositionInView(Vector3 detectablePosition)
+		{
+			var screenPoint = _camera.WorldToViewportPoint(detectablePosition);
+
+			return screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 &&
+			       screenPoint.y > 0 && screenPoint.y < 1;
 		}
 	}
 }

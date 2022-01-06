@@ -1,63 +1,53 @@
-using System;
-using System.Collections;
 using BrainWorks.Senses;
 using BrainWorks.Senses.Settings;
 using UnityEngine;
 
-public class Brain : MonoBehaviour
+namespace BrainWorks.Brain
 {
-	[SerializeField] private SenseSettings settings;
-
-	private ISense[] senses;
-
-	private void Start()
+	public class Brain : MonoBehaviour
 	{
-		senses = GetComponents<ISense>();
+		[SerializeField] private SenseSettings settings;
 
-		for (var i = 0; i < senses.Length; i++)
+		private ISense[] _senses;
+		private float[] _tickTimers;
+
+		private void Start()
 		{
-			var currentSense = senses[i];
-			StartCoroutine(TickCoroutine(currentSense, GetTickTime(currentSense.GetSenseType())));
+			_senses = GetComponents<ISense>();
+
+			SetTickTimers();
 		}
-	}
 
-	private IEnumerator TickCoroutine(ISense sense, float timeToWait)
-	{
-		yield return new WaitForSeconds(timeToWait);
-
-		var senseType = sense.GetSenseType();
-
-		sense.Tick(GetObjectCount(senseType));
-		StartCoroutine(TickCoroutine(sense, GetTickTime(senseType)));
-	}
-
-	private float GetTickTime(ISense.SenseType senseType)
-	{
-		switch (senseType)
+		private void SetTickTimers()
 		{
-			case ISense.SenseType.Vision:
-				return settings.VisionTickTime;
-			case ISense.SenseType.Hearing:
-				return settings.HearingTickTime;
-			case ISense.SenseType.Smell:
-				return settings.SmellTickTime;
-			default:
-				throw new ArgumentOutOfRangeException(nameof(senseType), senseType, null);
+			var senseCount = _senses.Length;
+			_tickTimers = new float[senseCount];
+
+			for (var i = 0; i < senseCount; i++)
+				_tickTimers[i] = settings.GetTickTime(_senses[i].GetSenseType());
 		}
-	}
 
-	private int GetObjectCount(ISense.SenseType senseType)
-	{
-		switch (senseType)
+		private void Update()
 		{
-			case ISense.SenseType.Vision:
-				return settings.MaxVisibleObjects;
-			case ISense.SenseType.Hearing:
-				return settings.MaxHearingObjects;
-			case ISense.SenseType.Smell:
-				return settings.MaxSmellableObjects;
-			default:
-				throw new ArgumentOutOfRangeException(nameof(senseType), senseType, null);
+			UpdateSenseTickTimers();
+		}
+
+		private void UpdateSenseTickTimers()
+		{
+			var senseCount = _senses.Length;
+			for (var i = 0; i < senseCount; i++)
+			{
+				if (_tickTimers[i] < 0)
+				{
+					var sense = _senses[i];
+					var senseType = sense.GetSenseType();
+
+					sense.Tick(settings.GetObjectCount(senseType));
+					_tickTimers[i] = settings.GetTickTime(senseType);
+				}
+
+				_tickTimers[i] -= Time.unscaledDeltaTime;
+			}
 		}
 	}
 }

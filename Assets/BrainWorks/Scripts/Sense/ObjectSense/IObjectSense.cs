@@ -1,9 +1,12 @@
-using UnityEngine;
-
 namespace BrainWorks.ObjectSense
 {
 	public interface IObjectSense
 	{
-		GameObject[] GetVisibleObjects(int objectCount);
+		/// <summary>
+		/// Returns all visible objects by the specific sense.
+		/// </summary>
+		/// <param name="objectCount">Max number of objects that should be contained</param>
+		/// <returns></returns>
+		Detectable[] GetVisibleObjects(int objectCount);
 	}
 }

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using BrainWorks.Extensions;
 using BrainWorks.ObjectSense;
-using UnityEditor.SearchService;
 using UnityEngine;
 
 namespace BrainWorks.Senses
@@ -9,7 +8,7 @@ namespace BrainWorks.Senses
 	[RequireComponent(typeof(IObjectSense))]
 	public class Vision : MonoBehaviour, ISense
 	{
-		private readonly List<GameObject> _visibleGameObjects = new List<GameObject>();
+		private readonly List<Detectable> _visibleDetectables = new List<Detectable>();
 
 		private IObjectSense _objectSense;
 
@@ -33,15 +32,16 @@ namespace BrainWorks.Senses
 		/// </summary>
 		private void GatherVisibleObjects(int objectCount)
 		{
-			_visibleGameObjects.Clear();
+			_visibleDetectables.Clear();
 
 			var visibleObjects = _objectSense.GetVisibleObjects(objectCount);
 
-			for (var i = 0; i < visibleObjects.Length; i++)
+			var visibleObjectCount = visibleObjects.Length;
+			for (var i = 0; i < visibleObjectCount; i++)
 				VisibilityCheck(visibleObjects[i]);
 		}
 
-		private void VisibilityCheck(GameObject target)
+		private void VisibilityCheck(Detectable target)
 		{
 			var objectPosition = transform.position;
 
@@ -53,7 +53,7 @@ namespace BrainWorks.Senses
 			//Check if no obstacles are in the way.
 			if (Physics.Raycast(objectPosition, directionToTarget, out var hitInfo, Mathf.Infinity))
 			{
-				if (hitInfo.transform.gameObject.Equals(target))
+				if (hitInfo.transform.gameObject.Equals(target.gameObject))
 					isVisible = true;
 			}
 
@@ -62,13 +62,13 @@ namespace BrainWorks.Senses
 
 			if (isVisible)
 			{
-				if (!_visibleGameObjects.Contains(target))
-					_visibleGameObjects.Add(target);
+				if (!_visibleDetectables.Contains(target))
+					_visibleDetectables.Add(target);
 			}
 			else
 			{
-				if (_visibleGameObjects.Contains(target))
-					_visibleGameObjects.Remove(target);
+				if (_visibleDetectables.Contains(target))
+					_visibleDetectables.Remove(target);
 			}
 		}
 
@@ -78,11 +78,12 @@ namespace BrainWorks.Senses
 		/// <param name="targetObject"></param>
 		/// <param name="objectPosition"></param>
 		/// <returns></returns>
-		private static bool CanSeeBounds(GameObject targetObject, Vector3 objectPosition)
+		private static bool CanSeeBounds(Detectable targetObject, Vector3 objectPosition)
 		{
-			var bounds = targetObject.GetComponent<Collider>().bounds.BoundPositions();
+			var bounds = targetObject.GetBounds().BoundPositions();
 
-			for (var i = 0; i < bounds.Length; i++)
+			var boundCount = bounds.Length;
+			for (var i = 0; i < boundCount; i++)
 			{
 				var currentBoundPosition = bounds[i];
 				var directionToBoundPosition = (currentBoundPosition - objectPosition).normalized;
@@ -90,7 +91,7 @@ namespace BrainWorks.Senses
 				//Check if no obstacles are in the way.
 				if (!Physics.Raycast(objectPosition, directionToBoundPosition, out var hitInfo)) continue;
 
-				if (!hitInfo.transform.gameObject.Equals(targetObject)) continue;
+				if (!hitInfo.transform.gameObject.Equals(targetObject.gameObject)) continue;
 
 				return true;
 			}
@@ -104,8 +105,8 @@ namespace BrainWorks.Senses
 		{
 			Gizmos.color = Color.green;
 
-			for (var i = 0; i < _visibleGameObjects.Count; i++)
-				Gizmos.DrawLine(transform.position, _visibleGameObjects[i].transform.position);
+			for (var i = 0; i < _visibleDetectables.Count; i++)
+				Gizmos.DrawLine(transform.position, _visibleDetectables[i].transform.position);
 		}
 
 #endif

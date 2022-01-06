@@ -8,10 +8,12 @@ namespace BrainWorks.ObjectSense
 		private bool detectOnInitialization = true;
 
 		private Renderer _renderer;
+		private Bounds _bounds;
 
 		protected virtual void Start()
 		{
 			_renderer = GetComponent<Renderer>();
+			_bounds = GetComponent<Collider>().bounds;
 
 			if (detectOnInitialization)
 				DetectableHolder.AddToDetectables(this);
@@ -24,6 +26,15 @@ namespace BrainWorks.ObjectSense
 		public Renderer GetRendererComponent()
 		{
 			return _renderer;
+		}
+
+		/// <summary>
+		/// Returns collider component bounds.
+		/// </summary>
+		/// <returns></returns>
+		public Bounds GetBounds()
+		{
+			return _bounds;
 		}
 	}
 }

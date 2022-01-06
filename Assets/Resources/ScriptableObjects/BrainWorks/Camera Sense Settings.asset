@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 895a518825e7daa4f965e3374163e88c, type: 3}
-  m_Name: Sense Settings
+  m_Name: Camera Sense Settings
   m_EditorClassIdentifier: 
-  VisionTickTime: 0.5
-  HearingTickTime: 0.5
-  SmellTickTime: 1
-  MaxVisibleObjects: 25
-  MaxHearingObjects: 10
-  MaxSmellableObjects: 5
+  visionTickTime: 0.001
+  hearingTickTime: 0.5
+  smellTickTime: 1
+  maxVisibleObjects: 25
+  maxHearingObjects: 10
+  maxSmellableObjects: 5

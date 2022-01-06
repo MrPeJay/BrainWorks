@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace BrainWorks.Senses.Settings
@@ -6,16 +7,46 @@ namespace BrainWorks.Senses.Settings
 	public class SenseSettings : ScriptableObject
 	{
 		[Header("Sense Tick Time")] [Tooltip("Time it takes to update vision sense")]
-		public float VisionTickTime = 0.25f;
+		[SerializeField] private float visionTickTime = 0.25f;
 
 		[Tooltip("Times it takes to update hearing sense")]
-		public float HearingTickTime = 0.5f;
+		[SerializeField] private float hearingTickTime = 0.5f;
 
 		[Tooltip("Times it takes to update hearing sense")]
-		public float SmellTickTime = 1f;
+		[SerializeField] private float smellTickTime = 1f;
 
-		[Header("Sense Object Count")] public int MaxVisibleObjects = 25;
-		public int MaxHearingObjects = 10;
-		public int MaxSmellableObjects = 5;
+		[Header("Sense Object Count")] public int maxVisibleObjects = 25;
+		[SerializeField] private int maxHearingObjects = 10;
+		[SerializeField] private int maxSmellableObjects = 5;
+
+		public float GetTickTime(ISense.SenseType senseType)
+		{
+			switch (senseType)
+			{
+				case ISense.SenseType.Vision:
+					return visionTickTime;
+				case ISense.SenseType.Hearing:
+					return hearingTickTime;
+				case ISense.SenseType.Smell:
+					return smellTickTime;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(senseType), senseType, null);
+			}
+		}
+
+		public int GetObjectCount(ISense.SenseType senseType)
+		{
+			switch (senseType)
+			{
+				case ISense.SenseType.Vision:
+					return maxVisibleObjects;
+				case ISense.SenseType.Hearing:
+					return maxHearingObjects;
+				case ISense.SenseType.Smell:
+					return maxSmellableObjects;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(senseType), senseType, null);
+			}
+		}
 	}
 }

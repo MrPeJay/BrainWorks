@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace BrainWorks.ObjectSense
+namespace BrainWorks.Senses
 {
 	public static class DetectableHolder
 	{

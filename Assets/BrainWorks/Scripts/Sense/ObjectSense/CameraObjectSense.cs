@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace BrainWorks.ObjectSense
+namespace BrainWorks.Senses
 {
 	[RequireComponent(typeof(Camera))]
 	public class CameraObjectSense : MonoBehaviour, IObjectSense

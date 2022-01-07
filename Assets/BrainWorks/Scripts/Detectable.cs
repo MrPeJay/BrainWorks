@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace BrainWorks.ObjectSense
+namespace BrainWorks.Senses
 {
 	public class Detectable : MonoBehaviour
 	{

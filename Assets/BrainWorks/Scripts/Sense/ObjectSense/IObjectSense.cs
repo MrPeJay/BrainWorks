@@ -1,4 +1,4 @@
-namespace BrainWorks.ObjectSense
+namespace BrainWorks.Senses
 {
 	public interface IObjectSense
 	{

@@ -1,18 +1,17 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class Hearing : MonoBehaviour
+namespace BrainWorks.Senses
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+	public class Hearing : MonoBehaviour, ISense
+	{
+		public void Tick(int objectCount)
+		{
+			throw new System.NotImplementedException();
+		}
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+		public ISense.SenseType GetSenseType()
+		{
+			return ISense.SenseType.Hearing;
+		}
+	}
 }

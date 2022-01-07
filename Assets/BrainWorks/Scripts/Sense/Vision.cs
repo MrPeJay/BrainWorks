@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using BrainWorks.Extensions;
-using BrainWorks.ObjectSense;
 using UnityEngine;
 
 namespace BrainWorks.Senses
@@ -80,7 +78,7 @@ namespace BrainWorks.Senses
 		/// <returns></returns>
 		private static bool CanSeeBounds(Detectable targetObject, Vector3 objectPosition)
 		{
-			var bounds = targetObject.GetBounds().BoundPositions();
+			var bounds = BoundPositions(targetObject.GetBounds());
 
 			var boundCount = bounds.Length;
 			for (var i = 0; i < boundCount; i++)
@@ -97,6 +95,22 @@ namespace BrainWorks.Senses
 			}
 
 			return false;
+		}
+
+		private static Vector3[] BoundPositions(Bounds bounds)
+		{
+			var boundsMax = bounds.max;
+			var boundsMin = bounds.min;
+
+			return new Vector3[]
+			{
+				boundsMin, boundsMax, new Vector3(boundsMin.x, boundsMin.y, boundsMax.z),
+				new Vector3(boundsMin.x, boundsMax.y, boundsMin.z),
+				new Vector3(boundsMax.x, boundsMin.y, boundsMin.z),
+				new Vector3(boundsMin.x, boundsMax.y, boundsMax.z),
+				new Vector3(boundsMax.x, boundsMin.y, boundsMax.z),
+				new Vector3(boundsMax.x, boundsMax.y, boundsMin.z)
+			};
 		}
 
 #if UNITY_EDITOR

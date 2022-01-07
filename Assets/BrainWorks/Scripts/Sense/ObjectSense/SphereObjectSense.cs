@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace BrainWorks.ObjectSense
+namespace BrainWorks.Senses
 {
 	[RequireComponent(typeof(SphereCollider))]
 	public class SphereObjectSense : MonoBehaviour, IObjectSense

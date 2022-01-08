@@ -1,25 +1,38 @@
+using BrainWorks.Senses;
 using UnityEngine;
 
 namespace BrainWorks.Chunks
 {
 	public class VisibilityChunk : MonoBehaviour
 	{
+		private const int ChildChunkCount = 4;
+		private const float ChunkHeight = 256f;
+
 		[SerializeField] private Transform[] worldCorners = new Transform[2];
 		[SerializeField] private float chunkUpdateTime = 5f;
 		[SerializeField] private int divisionCount = 4;
 
 		private Chunk _chunks;
-		private bool _chunksCreated = false;
 
-		private struct Chunk
+		public class Chunk
 		{
-			public readonly Bounds ChunkBounds;
+			public Bounds ChunkBounds;
+			public Detectable[] Detectables;
 			public Chunk[] ChildChunks;
 
 			public Chunk(Bounds bounds)
 			{
 				ChunkBounds = bounds;
-				ChildChunks = null;
+			}
+
+			public bool ContainsChildChunks()
+			{
+				return ChildChunks != null;
+			}
+
+			public bool ContainsPosition(Vector3 position)
+			{
+				return ChunkBounds.Contains(position);
 			}
 		}
 
@@ -28,12 +41,40 @@ namespace BrainWorks.Chunks
 			CreateChunks();
 		}
 
+		public Chunk GetChunkByPosition(Vector3 position)
+		{
+			if (_chunks == null)
+				return null;
+
+			//Is outside of visibility chunks.
+			if (!_chunks.ContainsPosition(position))
+				return null;
+
+			return GetChunk(_chunks, position);
+		}
+
+		private static Chunk GetChunk(Chunk parentChunk, Vector3 position)
+		{
+			if (!parentChunk.ContainsChildChunks())
+				return parentChunk;
+
+			for (var i = 0; i < ChildChunkCount; i++)
+			{
+				var childChunk = parentChunk.ChildChunks[i];
+
+				if (!childChunk.ContainsPosition(position))
+					continue;
+
+				return GetChunk(childChunk, position);
+			}
+
+			return parentChunk;
+		}
+
 		private void CreateChunks()
 		{
 			_chunks = new Chunk(InitialBounds(worldCorners[0].position, worldCorners[1].position));
 			_chunks.ChildChunks = DivideChunk(_chunks);
-
-			_chunksCreated = true;
 		}
 
 		private static Bounds InitialBounds(Vector3 leftCornerPosition, Vector3 rightCornerPosition)
@@ -41,32 +82,36 @@ namespace BrainWorks.Chunks
 			var centerPoint = CenterVector(leftCornerPosition, rightCornerPosition);
 
 			return new Bounds(centerPoint,
-				new Vector3(leftCornerPosition.x - rightCornerPosition.x,
-					leftCornerPosition.y - rightCornerPosition.y,
-					leftCornerPosition.z - rightCornerPosition.z));
+				new Vector3(Mathf.Abs(leftCornerPosition.x - rightCornerPosition.x),
+					ChunkHeight,
+					Mathf.Abs(leftCornerPosition.z - rightCornerPosition.z)));
 		}
 
 		private Chunk[] DivideChunk(Chunk parentChunk, int divisionCount = 0)
 		{
+			Debug.LogWarning(parentChunk.ChunkBounds);
+
 			if (divisionCount == this.divisionCount)
 				return null;
 
 			var parentBounds = parentChunk.ChunkBounds;
 
+			var parentExtents = new Vector3(parentBounds.extents.x, ChunkHeight, parentBounds.extents.z);
+
 			var leftUpBounds =
-				new Bounds(CenterVector(parentBounds.min, parentBounds.center), parentBounds.extents);
+				new Bounds(CenterVector(parentBounds.min, parentBounds.center), parentExtents);
 			var rightUpBounds =
 				new Bounds(
 					new Vector3(CenterPoint(parentBounds.max.x, parentBounds.center.x),
 						CenterPoint(parentBounds.max.y, parentBounds.center.y),
-						CenterPoint(parentBounds.min.z, parentBounds.center.z)), parentBounds.extents);
+						CenterPoint(parentBounds.min.z, parentBounds.center.z)), parentExtents);
 			var leftDownBounds =
 				new Bounds(
 					new Vector3(CenterPoint(parentBounds.min.x, parentBounds.center.x),
 						CenterPoint(parentBounds.min.y, parentBounds.center.y),
-						CenterPoint(parentBounds.max.z, parentBounds.center.z)), parentBounds.extents);
+						CenterPoint(parentBounds.max.z, parentBounds.center.z)), parentExtents);
 			var rightDownBound =
-				new Bounds(CenterVector(parentBounds.max, parentBounds.center), parentBounds.extents);
+				new Bounds(CenterVector(parentBounds.max, parentBounds.center), parentExtents);
 
 			var leftUpChunk = new Chunk(leftUpBounds);
 			var rightUpChunk = new Chunk(rightUpBounds);
@@ -93,16 +138,14 @@ namespace BrainWorks.Chunks
 			return point1 + (point2 - point1) / 2;
 		}
 
-		private void UpdateChunks()
-		{
-
-		}
-
 #if UNITY_EDITOR
 
-		private void OnDrawGizmosSelected()
+		private void OnDrawGizmos()
 		{
-			if (!_chunksCreated)
+			if (!Application.isPlaying)
+				return;
+
+			if (_chunks == null)
 				return;
 
 			DrawChunkOutlines(_chunks);
@@ -111,24 +154,22 @@ namespace BrainWorks.Chunks
 		private static void DrawChunkOutlines(Chunk chunk)
 		{
 			if (chunk.ChildChunks == null)
-				DrawBoundOutlines(chunk.ChunkBounds);
+				DrawBoundOutlines(chunk.ChunkBounds, Color.blue);
 			else
 			{
-				for (var i = 0; i < 4; i++)
+				for (var i = 0; i < ChildChunkCount; i++)
 					DrawChunkOutlines(chunk.ChildChunks[i]);
-
-				DrawBoundOutlines(chunk.ChunkBounds);
 			}
 		}
 
-		private static void DrawBoundOutlines(Bounds bounds)
+		public static void DrawBoundOutlines(Bounds bounds, Color color)
 		{
 			var minPositionLeft = new Vector3(bounds.min.x, 0, bounds.min.z);
 			var minPositionRight = new Vector3(bounds.min.x, 0, bounds.max.z);
 			var maxPositionRight = new Vector3(bounds.max.x, 0, bounds.max.z);
 			var maxPositionLeft = new Vector3(bounds.max.x, 0, bounds.min.z);
 
-			Gizmos.color = Color.blue;
+			Gizmos.color = color;
 
 			Gizmos.DrawLine(minPositionLeft, minPositionRight);
 			Gizmos.DrawLine(maxPositionRight, maxPositionLeft);

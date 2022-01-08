@@ -1,3 +1,5 @@
+using System;
+using BrainWorks.Chunks;
 using UnityEngine;
 
 namespace BrainWorks.Senses
@@ -6,12 +8,18 @@ namespace BrainWorks.Senses
 	public class CameraObjectSense : MonoBehaviour, IObjectSense
 	{
 		[SerializeField] private LayerMask visibleLayerMask;
+		[SerializeField] private VisibilityChunk visibilityChunk;
 
 		private Camera _camera;
+		private VisibilityChunk.Chunk _currentChunk;
+
+		private void Awake()
+		{
+			_camera = GetComponent<Camera>();
+		}
 
 		private void Start()
 		{
-			_camera = GetComponent<Camera>();
 			_camera.enabled = false;
 		}
 
@@ -30,7 +38,7 @@ namespace BrainWorks.Senses
 				var currentDetectable = detectables[i];
 
 				//Check if correct layer mask.
-				if (visibleLayerMask != (visibleLayerMask | 1 << currentDetectable.GetRendererComponent().gameObject.layer))
+				if (visibleLayerMask != (visibleLayerMask | 1 << currentDetectable.gameObject.layer))
 					continue;
 
 				//More performance friendly approach to see if the object is visible in a certain camera view.
@@ -107,5 +115,20 @@ namespace BrainWorks.Senses
 			return screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 &&
 			       screenPoint.y > 0 && screenPoint.y < 1;
 		}
+
+#if UNITY_EDITOR
+
+		private void OnDrawGizmos()
+		{
+			if (!Application.isPlaying)
+				return;
+
+			_currentChunk = visibilityChunk.GetChunkByPosition(transform.position);
+
+			if (_currentChunk != null)
+				VisibilityChunk.DrawBoundOutlines(_currentChunk.ChunkBounds, Color.green);
+		}
+
+#endif
 	}
 }

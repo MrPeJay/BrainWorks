@@ -11,10 +11,13 @@ namespace BrainWorks.Brain
 		private ISense[] _senses;
 		private float[] _tickTimers;
 
-		private void Start()
+		private void Awake()
 		{
 			_senses = GetComponents<ISense>();
+		}
 
+		private void Start()
+		{
 			SetTickTimers();
 		}
 

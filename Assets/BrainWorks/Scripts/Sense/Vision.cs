@@ -10,7 +10,7 @@ namespace BrainWorks.Senses
 
 		private IObjectSense _objectSense;
 
-		private void Start()
+		private void Awake()
 		{
 			_objectSense = GetComponent<IObjectSense>();
 		}

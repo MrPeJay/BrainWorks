@@ -19,10 +19,12 @@ namespace BrainWorks.Chunks
 			public Bounds ChunkBounds;
 			public Detectable[] Detectables;
 			public Chunk[] ChildChunks;
+			public int Depth;
 
-			public Chunk(Bounds bounds)
+			public Chunk(Bounds bounds, int depth = 0)
 			{
 				ChunkBounds = bounds;
+				Depth = depth;
 			}
 
 			public bool ContainsChildChunks()
@@ -89,8 +91,6 @@ namespace BrainWorks.Chunks
 
 		private Chunk[] DivideChunk(Chunk parentChunk, int divisionCount = 0)
 		{
-			Debug.LogWarning(parentChunk.ChunkBounds);
-
 			if (divisionCount == this.divisionCount)
 				return null;
 
@@ -103,20 +103,20 @@ namespace BrainWorks.Chunks
 			var rightUpBounds =
 				new Bounds(
 					new Vector3(CenterPoint(parentBounds.max.x, parentBounds.center.x),
-						CenterPoint(parentBounds.max.y, parentBounds.center.y),
+						0f,
 						CenterPoint(parentBounds.min.z, parentBounds.center.z)), parentExtents);
 			var leftDownBounds =
 				new Bounds(
 					new Vector3(CenterPoint(parentBounds.min.x, parentBounds.center.x),
-						CenterPoint(parentBounds.min.y, parentBounds.center.y),
+						0f,
 						CenterPoint(parentBounds.max.z, parentBounds.center.z)), parentExtents);
 			var rightDownBound =
 				new Bounds(CenterVector(parentBounds.max, parentBounds.center), parentExtents);
 
-			var leftUpChunk = new Chunk(leftUpBounds);
-			var rightUpChunk = new Chunk(rightUpBounds);
-			var leftDownChunk = new Chunk(leftDownBounds);
-			var rightDownChunk = new Chunk(rightDownBound);
+			var leftUpChunk = new Chunk(leftUpBounds, divisionCount + 1);
+			var rightUpChunk = new Chunk(rightUpBounds, divisionCount + 1);
+			var leftDownChunk = new Chunk(leftDownBounds, divisionCount + 1);
+			var rightDownChunk = new Chunk(rightDownBound, divisionCount + 1);
 
 			leftUpChunk.ChildChunks = DivideChunk(leftUpChunk, divisionCount + 1);
 			rightUpChunk.ChildChunks = DivideChunk(rightUpChunk, divisionCount + 1);
@@ -129,7 +129,7 @@ namespace BrainWorks.Chunks
 		private static Vector3 CenterVector(Vector3 point1, Vector3 point2)
 		{
 			return new Vector3(CenterPoint(point1.x, point2.x),
-				CenterPoint(point1.y, point2.y),
+				0f,
 				CenterPoint(point1.z, point2.z));
 		}
 

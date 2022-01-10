@@ -1,4 +1,3 @@
-using System;
 using BrainWorks.Chunks;
 using UnityEngine;
 
@@ -27,8 +26,11 @@ namespace BrainWorks.Senses
 		{
 			var detectableDatas = new DetectableData[objectCount];
 
-			//Get all available renderers.
-			var detectables = DetectableHolder.GetDetectables();
+			var detectables = DetectableHolder.GetDetectablesByPosition(transform.position);
+
+			if (detectables == null)
+				return null;
+
 			var maxDistance = 0f;
 			var length = 0;
 
@@ -121,6 +123,9 @@ namespace BrainWorks.Senses
 		private void OnDrawGizmos()
 		{
 			if (!Application.isPlaying)
+				return;
+
+			if (visibilityChunk == null)
 				return;
 
 			_currentChunk = visibilityChunk.GetChunkByPosition(transform.position);

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 895a518825e7daa4f965e3374163e88c, type: 3}
   m_Name: Camera Sense Settings
   m_EditorClassIdentifier: 
-  visionTickTime: 0.001
+  visionTickTime: 0
   hearingTickTime: 0.5
   smellTickTime: 1
   maxVisibleObjects: 25

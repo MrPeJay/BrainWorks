@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BrainWorks.Senses;
 using UnityEngine;
 
@@ -5,19 +6,23 @@ namespace BrainWorks.Chunks
 {
 	public class VisibilityChunk : MonoBehaviour
 	{
+		public static VisibilityChunk Instance;
+		public Chunk Chunks;
+
 		private const int ChildChunkCount = 4;
 		private const float ChunkHeight = 256f;
 
 		[SerializeField] private Transform[] worldCorners = new Transform[2];
 		[SerializeField] private float chunkUpdateTime = 5f;
 		[SerializeField] private int divisionCount = 4;
+		[SerializeField] private bool dynamicChunks = false;
 
-		private Chunk _chunks;
+		private float _timer;
 
 		public class Chunk
 		{
 			public Bounds ChunkBounds;
-			public Detectable[] Detectables;
+			public List<Detectable> Detectables = new List<Detectable>();
 			public Chunk[] ChildChunks;
 			public int Depth;
 
@@ -25,6 +30,7 @@ namespace BrainWorks.Chunks
 			{
 				ChunkBounds = bounds;
 				Depth = depth;
+				ChildChunks = null;
 			}
 
 			public bool ContainsChildChunks()
@@ -36,6 +42,80 @@ namespace BrainWorks.Chunks
 			{
 				return ChunkBounds.Contains(position);
 			}
+
+			public void AssignDetectable(Detectable detectable)
+			{
+				if (!ContainsPosition(detectable.GetPosition()))
+					return;
+
+				if (!ContainsChildChunks())
+				{
+					Detectables.Add(detectable);
+					return;
+				}
+
+				for (var i = 0; i < ChildChunkCount; i++)
+					ChildChunks[i].AssignDetectable(detectable);
+			}
+
+			public Detectable[] GetDetectables(Vector3 position)
+			{
+				if (!ContainsPosition(position))
+					return null;
+
+				if (!ContainsChildChunks())
+					return Detectables.ToArray();
+
+				for (var i = 0; i < ChildChunkCount; i++)
+				{
+					var detectables = ChildChunks[i].GetDetectables(position);
+
+					if (detectables != null)
+						return detectables;
+				}
+
+				return null;
+			}
+
+			public void ClearDetectables()
+			{
+				if (!ContainsChildChunks())
+				{
+					Detectables.Clear();
+					return;
+				}
+
+				for (var i = 0; i < ChildChunkCount; i++)
+					ChildChunks[i].ClearDetectables();
+			}
+		}
+
+		private void Update()
+		{
+			if (_timer < 0f)
+			{
+				UpdateChunks();
+				_timer = chunkUpdateTime;
+			}
+
+			_timer -= Time.unscaledDeltaTime;
+		}
+
+		private void UpdateChunks()
+		{
+			var detectables = DetectableHolder.GetDetectables();
+			var detectableCount = detectables.Length;
+
+			Chunks.ClearDetectables();
+
+			for (var i = 0; i < detectableCount; i++)
+				Chunks.AssignDetectable(detectables[i]);
+		}
+
+		private void Awake()
+		{
+			Instance = this;
+			_timer = chunkUpdateTime;
 		}
 
 		private void Start()
@@ -45,14 +125,14 @@ namespace BrainWorks.Chunks
 
 		public Chunk GetChunkByPosition(Vector3 position)
 		{
-			if (_chunks == null)
+			if (Chunks == null)
 				return null;
 
 			//Is outside of visibility chunks.
-			if (!_chunks.ContainsPosition(position))
+			if (!Chunks.ContainsPosition(position))
 				return null;
 
-			return GetChunk(_chunks, position);
+			return GetChunk(Chunks, position);
 		}
 
 		private static Chunk GetChunk(Chunk parentChunk, Vector3 position)
@@ -75,8 +155,8 @@ namespace BrainWorks.Chunks
 
 		private void CreateChunks()
 		{
-			_chunks = new Chunk(InitialBounds(worldCorners[0].position, worldCorners[1].position));
-			_chunks.ChildChunks = DivideChunk(_chunks);
+			Chunks = new Chunk(InitialBounds(worldCorners[0].position, worldCorners[1].position));
+			Chunks.ChildChunks = DivideChunk(Chunks);
 		}
 
 		private static Bounds InitialBounds(Vector3 leftCornerPosition, Vector3 rightCornerPosition)
@@ -145,10 +225,10 @@ namespace BrainWorks.Chunks
 			if (!Application.isPlaying)
 				return;
 
-			if (_chunks == null)
+			if (Chunks == null)
 				return;
 
-			DrawChunkOutlines(_chunks);
+			DrawChunkOutlines(Chunks);
 		}
 
 		private static void DrawChunkOutlines(Chunk chunk)

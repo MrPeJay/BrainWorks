@@ -1,3 +1,4 @@
+using BrainWorks.Chunks;
 using UnityEngine;
 
 namespace BrainWorks.Senses
@@ -30,6 +31,11 @@ namespace BrainWorks.Senses
 		/// </summary>
 		/// <returns></returns>
 		public float GetRadius() => radius;
+
+		public bool IsChunkVisible(VisibilityChunk.Chunk chunk)
+		{
+			return false;
+		}
 
 #if UNITY_EDITOR
 

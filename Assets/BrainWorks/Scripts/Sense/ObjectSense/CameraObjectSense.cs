@@ -1,5 +1,5 @@
-using BrainWorks.Chunks;
 using UnityEngine;
+using BrainWorks.Chunks;
 
 namespace BrainWorks.Senses
 {
@@ -10,10 +10,12 @@ namespace BrainWorks.Senses
 		[SerializeField] private VisibilityChunk visibilityChunk;
 
 		private Camera _camera;
+		private Transform _transform;
 		private VisibilityChunk.Chunk _currentChunk;
 
 		private void Awake()
 		{
+			_transform = transform;
 			_camera = GetComponent<Camera>();
 		}
 
@@ -26,7 +28,7 @@ namespace BrainWorks.Senses
 		{
 			var detectableDatas = new DetectableData[objectCount];
 
-			var detectables = DetectableHolder.GetDetectablesByPosition(transform.position);
+			var detectables = DetectableHolder.GetDetectablesByPosition(_transform.position);
 
 			if (detectables == null)
 				return null;
@@ -47,7 +49,7 @@ namespace BrainWorks.Senses
 				var currentDetectablePosition = currentDetectable.transform.position;
 				if (!IsPositionInView(currentDetectablePosition)) continue;
 
-				var currentObjectDistance = (currentDetectablePosition - transform.position).sqrMagnitude;
+				var currentObjectDistance = (currentDetectablePosition - _transform.position).sqrMagnitude;
 
 				//Add objects till it is full.
 				if (length < objectCount)
@@ -66,7 +68,6 @@ namespace BrainWorks.Senses
 				if (currentObjectDistance > maxDistance)
 					continue;
 
-				//Find the issue here. something wrong with indexing I guess.. Also check distances.
 				var previousDetectableIndex = -1;
 
 				for (var j = 0; j < length; j++)
@@ -108,14 +109,30 @@ namespace BrainWorks.Senses
 		/// <summary>
 		/// Returns whether the target position is inside the camera frustum.
 		/// </summary>
-		/// <param name="detectablePosition"></param>
+		/// <param name="position"></param>
 		/// <returns></returns>
-		private bool IsPositionInView(Vector3 detectablePosition)
+		private bool IsPositionInView(Vector3 position)
 		{
-			var screenPoint = _camera.WorldToViewportPoint(detectablePosition);
+			var screenPoint = _camera.WorldToViewportPoint(position);
 
 			return screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 &&
 			       screenPoint.y > 0 && screenPoint.y < 1;
+		}
+
+		public bool IsChunkVisible(VisibilityChunk.Chunk chunk)
+		{
+			var bounds = chunk.BoundArray();
+
+			for (var i = 0; i < 4; i++)
+			{
+				var currentBounds = bounds[i];
+				var boundPosition = new Vector3(currentBounds.x, _transform.position.y, currentBounds.z);
+
+				if (IsPositionInView(boundPosition))
+					return true;
+			}
+
+			return false;
 		}
 
 #if UNITY_EDITOR

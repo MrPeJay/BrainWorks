@@ -88,6 +88,17 @@ namespace BrainWorks.Chunks
 				for (var i = 0; i < ChildChunkCount; i++)
 					ChildChunks[i].ClearDetectables();
 			}
+
+			public Vector3[] BoundArray()
+			{
+				return new Vector3[]
+				{
+					new Vector3(ChunkBounds.min.x, 0, ChunkBounds.min.z),
+					new Vector3(ChunkBounds.min.x, 0, ChunkBounds.max.z),
+					new Vector3(ChunkBounds.max.x, 0, ChunkBounds.max.z),
+					new Vector3(ChunkBounds.max.x, 0, ChunkBounds.min.z)
+				};
+			}
 		}
 
 		private void Update()

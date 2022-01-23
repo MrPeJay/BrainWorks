@@ -1,3 +1,5 @@
+using BrainWorks.Chunks;
+
 namespace BrainWorks.Senses
 {
 	public interface IObjectSense
@@ -8,5 +10,7 @@ namespace BrainWorks.Senses
 		/// <param name="objectCount">Max number of objects that should be contained</param>
 		/// <returns></returns>
 		Detectable[] GetVisibleObjects(int objectCount);
+
+		bool IsChunkVisible(VisibilityChunk.Chunk chunk);
 	}
 }

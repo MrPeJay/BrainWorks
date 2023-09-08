@@ -1,3 +1,6 @@
+using System;
+using System.Collections;
+using BrainWorks.Chunks;
 using UnityEngine;
 
 namespace BrainWorks.Senses
@@ -10,31 +13,35 @@ namespace BrainWorks.Senses
 		private Bounds _bounds;
 		private Transform _transform;
 
+		public delegate void PositionChanged(Detectable detectable, Vector3 newPosition);
+
+		public PositionChanged OnPositionChanged;
+
+		private Vector3 _previousPosition;
+
 		protected virtual void Awake()
 		{
 			_bounds = GetComponent<Collider>().bounds;
 			_transform = transform;
+
+			_previousPosition = _transform.position;
 		}
 
 		protected virtual void Start()
 		{
 			if (detectOnInitialization)
-				DetectableHolder.AddToDetectables(this);
+				VisibilityChunk.Instance.SubscribeToVisibilityChunk(this, _transform.position);
 		}
 
-		protected void OnDestroy()
+		private void Update()
 		{
-			DetectableHolder.RemoveFromDetectables(this);
+			if (!_previousPosition.Equals(_transform.position))
+				OnPositionChanged(this, _transform.position);
 		}
 
 		public Bounds GetBounds()
 		{
 			return _bounds;
-		}
-
-		public Vector3 GetPosition()
-		{
-			return _transform.position;
 		}
 	}
 }

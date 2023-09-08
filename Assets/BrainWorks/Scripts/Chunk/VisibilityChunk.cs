@@ -13,18 +13,40 @@ namespace BrainWorks.Chunks
 		private const float ChunkHeight = 256f;
 
 		[SerializeField] private Transform[] worldCorners = new Transform[2];
-		[SerializeField] private float chunkUpdateTime = 5f;
 		[SerializeField] private int divisionCount = 4;
 		[SerializeField] private bool dynamicChunks = false;
-
-		private float _timer;
 
 		public class Chunk
 		{
 			public Bounds ChunkBounds;
-			public List<Detectable> Detectables = new List<Detectable>();
-			public Chunk[] ChildChunks;
 			public int Depth;
+			public bool HasChildChunks, HasParentChunk;
+
+			public Chunk[] ChildChunks
+			{
+				get => _childChunks;
+				set
+				{
+					_childChunks = value;
+					HasChildChunks = value != null;
+				}
+			}
+
+			public Chunk ParentChunk
+			{
+				get => _parentChunk;
+				set
+				{
+					_parentChunk = value;
+					HasParentChunk = value != null;
+				}
+			}
+
+			private readonly Dictionary<Detectable, Vector3> _detectables = new Dictionary<Detectable, Vector3>();
+			private readonly List<Detectable> _detectablesList = new List<Detectable>();
+
+			private Chunk _parentChunk;
+			private Chunk[] _childChunks;
 
 			public Chunk(Bounds bounds, int depth = 0)
 			{
@@ -33,38 +55,57 @@ namespace BrainWorks.Chunks
 				ChildChunks = null;
 			}
 
-			public bool ContainsChildChunks()
-			{
-				return ChildChunks != null;
-			}
-
 			public bool ContainsPosition(Vector3 position)
 			{
 				return ChunkBounds.Contains(position);
 			}
 
-			public void AssignDetectable(Detectable detectable)
+			private void OnDetectablePositionChanged(Detectable detectable, Vector3 currentPosition)
 			{
-				if (!ContainsPosition(detectable.GetPosition()))
-					return;
+				AssignDetectable(detectable, currentPosition);
+			}
 
-				if (!ContainsChildChunks())
+			public void AssignDetectable(Detectable detectable, Vector3 currentPosition, bool parentAssign = false)
+			{
+				if (!ContainsPosition(currentPosition))
 				{
-					Detectables.Add(detectable);
+					//If position is not in bounds and has parent chunk, assign it there.
+					if (!parentAssign && HasParentChunk)
+						ParentChunk.AssignDetectable(detectable, currentPosition);
+
+					if (_detectables.ContainsKey(detectable))
+					{
+						_detectables.Remove(detectable);
+						_detectablesList.Remove(detectable);
+						detectable.OnPositionChanged -= OnDetectablePositionChanged;
+					}
+
+					return;
+				}
+
+				if (!HasChildChunks)
+				{
+					if (!_detectables.ContainsKey(detectable))
+					{
+						_detectables.Add(detectable, currentPosition);
+						_detectablesList.Add(detectable);
+						detectable.OnPositionChanged += OnDetectablePositionChanged;
+					}
+
 					return;
 				}
 
 				for (var i = 0; i < ChildChunkCount; i++)
-					ChildChunks[i].AssignDetectable(detectable);
+					ChildChunks[i].AssignDetectable(detectable, currentPosition, true);
 			}
 
-			public Detectable[] GetDetectables(Vector3 position)
+			public List<Detectable> GetDetectables(Vector3 position)
 			{
 				if (!ContainsPosition(position))
 					return null;
 
-				if (!ContainsChildChunks())
-					return Detectables.ToArray();
+				if (!HasChildChunks)
+					return _detectablesList;
 
 				for (var i = 0; i < ChildChunkCount; i++)
 				{
@@ -75,18 +116,6 @@ namespace BrainWorks.Chunks
 				}
 
 				return null;
-			}
-
-			public void ClearDetectables()
-			{
-				if (!ContainsChildChunks())
-				{
-					Detectables.Clear();
-					return;
-				}
-
-				for (var i = 0; i < ChildChunkCount; i++)
-					ChildChunks[i].ClearDetectables();
 			}
 
 			public Vector3[] BoundArray()
@@ -101,32 +130,14 @@ namespace BrainWorks.Chunks
 			}
 		}
 
-		private void Update()
+		public void SubscribeToVisibilityChunk(Detectable detectable, Vector3 currentPosition)
 		{
-			if (_timer < 0f)
-			{
-				UpdateChunks();
-				_timer = chunkUpdateTime;
-			}
-
-			_timer -= Time.unscaledDeltaTime;
-		}
-
-		private void UpdateChunks()
-		{
-			var detectables = DetectableHolder.GetDetectables();
-			var detectableCount = detectables.Length;
-
-			Chunks.ClearDetectables();
-
-			for (var i = 0; i < detectableCount; i++)
-				Chunks.AssignDetectable(detectables[i]);
+			Chunks.AssignDetectable(detectable, currentPosition);
 		}
 
 		private void Awake()
 		{
 			Instance = this;
-			_timer = chunkUpdateTime;
 		}
 
 		private void Start()
@@ -148,7 +159,7 @@ namespace BrainWorks.Chunks
 
 		private static Chunk GetChunk(Chunk parentChunk, Vector3 position)
 		{
-			if (!parentChunk.ContainsChildChunks())
+			if (!parentChunk.HasChildChunks)
 				return parentChunk;
 
 			for (var i = 0; i < ChildChunkCount; i++)
@@ -213,6 +224,13 @@ namespace BrainWorks.Chunks
 			rightUpChunk.ChildChunks = DivideChunk(rightUpChunk, divisionCount + 1);
 			leftDownChunk.ChildChunks = DivideChunk(leftDownChunk, divisionCount + 1);
 			rightDownChunk.ChildChunks = DivideChunk(rightDownChunk, divisionCount + 1);
+
+			leftUpChunk.ParentChunk = parentChunk;
+			rightUpChunk.ParentChunk = parentChunk;
+			leftDownChunk.ParentChunk = parentChunk;
+			rightDownChunk.ParentChunk = parentChunk;
+
+			//parentChunk.HasChildChunks = true;
 
 			return new Chunk[] {leftUpChunk, rightUpChunk, leftDownChunk, rightDownChunk};
 		}

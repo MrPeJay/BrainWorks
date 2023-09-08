@@ -27,8 +27,9 @@ namespace BrainWorks.Senses
 		public Detectable[] GetVisibleObjects(int objectCount)
 		{
 			var detectableDatas = new DetectableData[objectCount];
+			var currentPosition = _transform.position;
 
-			var detectables = DetectableHolder.GetDetectablesByPosition(_transform.position);
+			var detectables = VisibilityChunk.Instance.Chunks.GetDetectables(currentPosition);
 
 			if (detectables == null)
 				return null;
@@ -36,7 +37,7 @@ namespace BrainWorks.Senses
 			var maxDistance = 0f;
 			var length = 0;
 
-			var detectableCount = detectables.Length;
+			var detectableCount = detectables.Count;
 			for (var i = 0; i < detectableCount; i++)
 			{
 				var currentDetectable = detectables[i];
@@ -49,7 +50,7 @@ namespace BrainWorks.Senses
 				var currentDetectablePosition = currentDetectable.transform.position;
 				if (!IsPositionInView(currentDetectablePosition)) continue;
 
-				var currentObjectDistance = (currentDetectablePosition - _transform.position).sqrMagnitude;
+				var currentObjectDistance = (currentDetectablePosition - currentPosition).sqrMagnitude;
 
 				//Add objects till it is full.
 				if (length < objectCount)

@@ -6,7 +6,7 @@ namespace BrainWorks.Senses
 	[RequireComponent(typeof(IObjectSense))]
 	public class Vision : MonoBehaviour, ISense
 	{
-		private readonly List<Detectable> _visibleDetectables = new List<Detectable>();
+		private readonly HashSet<Detectable> _visibleDetectables = new HashSet<Detectable>();
 
 		private IObjectSense _objectSense;
 
@@ -31,10 +31,10 @@ namespace BrainWorks.Senses
 		private void GatherVisibleObjects(int objectCount)
 		{
 			_visibleDetectables.Clear();
-
 			var visibleObjects = _objectSense.GetVisibleObjects(objectCount);
 
 			var visibleObjectCount = visibleObjects.Length;
+
 			for (var i = 0; i < visibleObjectCount; i++)
 				VisibilityCheck(visibleObjects[i]);
 		}
@@ -42,8 +42,8 @@ namespace BrainWorks.Senses
 		private void VisibilityCheck(Detectable target)
 		{
 			var objectPosition = transform.position;
-
 			var targetPosition = target.transform.position;
+
 			var directionToTarget = (targetPosition - objectPosition).normalized;
 
 			var isVisible = false;
@@ -119,8 +119,8 @@ namespace BrainWorks.Senses
 		{
 			Gizmos.color = Color.green;
 
-			for (var i = 0; i < _visibleDetectables.Count; i++)
-				Gizmos.DrawLine(transform.position, _visibleDetectables[i].transform.position);
+			foreach (var detectable in _visibleDetectables)
+				Gizmos.DrawLine(transform.position, detectable.transform.position);
 		}
 
 #endif
